@@ -8,7 +8,8 @@ class EndpointSpec(BaseModel):
     
     name: str = Field(..., description="Unique name for the endpoint within this CR")
     url: str = Field(..., description="Full URL to monitor")
-    tags_overwrite: Optional[str] = Field(None, description="Comma-separated tags to replace default tags")
+    tagsOverride: Optional[str] = Field(None, description="Comma-separated tags to replace default tags")
+    monitorGroupOverride: Optional[str] = Field(None, description="Monitor group override for this specific endpoint")
     
     @field_validator('url')
     @classmethod
@@ -30,6 +31,7 @@ class UptimeMonitorSpec(BaseModel):
     
     enabled: bool = Field(..., description="Master switch to enable/disable monitoring")
     tags: Optional[str] = Field(None, description="Comma-separated default tags for all monitors")
+    monitorGroup: Optional[str] = Field(None, description="Monitor group name for organizing monitors")
     endpoints: List[EndpointSpec] = Field(..., description="List of endpoints to monitor")
     
     @field_validator('endpoints')
@@ -53,6 +55,12 @@ class UptimeMonitorSpec(BaseModel):
     
     def get_endpoint_tags(self, endpoint: EndpointSpec) -> List[str]:
         """Get the final tags for a specific endpoint."""
-        if endpoint.tags_overwrite:
-            return [tag.strip() for tag in endpoint.tags_overwrite.split(',') if tag.strip()]
+        if endpoint.tagsOverride:
+            return [tag.strip() for tag in endpoint.tagsOverride.split(',') if tag.strip()]
         return self.parse_default_tags()
+    
+    def get_endpoint_monitor_group(self, endpoint: EndpointSpec) -> Optional[str]:
+        """Get the monitor group for a specific endpoint."""
+        if endpoint.monitorGroupOverride:
+            return endpoint.monitorGroupOverride
+        return self.monitorGroup

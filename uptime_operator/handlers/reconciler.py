@@ -75,6 +75,16 @@ class UptimeMonitorReconciler:
                 # Get tags for this endpoint
                 endpoint_tags = spec_model.get_endpoint_tags(endpoint)
                 
+                # Get monitor group for this endpoint (if specified)
+                monitor_group = spec_model.get_endpoint_monitor_group(endpoint)
+                parent_id = None
+                
+                if monitor_group:
+                    logger.debug(f"Getting or creating monitor group '{monitor_group}' for endpoint '{endpoint.name}'")
+                    parent_id = self.uptime_client.get_or_create_monitor_group(monitor_group)
+                    if not parent_id:
+                        logger.warning(f"Failed to get or create monitor group '{monitor_group}', creating monitor without parent")
+                
                 existing_monitor = existing_by_name.get(monitor_name)
                 
                 if existing_monitor:
@@ -94,7 +104,7 @@ class UptimeMonitorReconciler:
                     if needs_update:
                         logger.info(f"Updating monitor '{monitor_name}'")
                         success = self.uptime_client.update_monitor(
-                            monitor_id, monitor_name, endpoint.url, endpoint_tags, crd_uid
+                            monitor_id, monitor_name, endpoint.url, endpoint_tags, crd_uid, parent_id
                         )
                         
                         status_value = "Updated" if success else "UpdateFailed"
@@ -112,9 +122,9 @@ class UptimeMonitorReconciler:
                     
                 else:
                     # Create new monitor
-                    logger.info(f"Creating monitor '{monitor_name}'")
+                    logger.info(f"Creating monitor '{monitor_name}'" + (f" in group '{monitor_group}'" if monitor_group else ""))
                     monitor_id = self.uptime_client.create_monitor(
-                        monitor_name, endpoint.url, endpoint_tags, crd_uid
+                        monitor_name, endpoint.url, endpoint_tags, crd_uid, parent_id
                     )
                     
                     if monitor_id:

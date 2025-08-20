@@ -11,29 +11,13 @@ from uptime_operator.handlers.reconciler import UptimeMonitorReconciler
 from uptime_operator.utils.config import Config
 
 
-@pytest.fixture
-def k8s_client():
-    """Real Kubernetes client using minikube config."""
-    config.load_kube_config(config_file=os.path.expanduser("~/.kube/config.minikube"))
-    return client.CustomObjectsApi()
 
-
-@pytest.fixture  
-def real_config():
-    """Real configuration for integration tests."""
-    return Config(
-        uptime_kuma_url="http://localhost:3001",
-        uptime_kuma_username="admin",  # Will be ignored if auth disabled
-        uptime_kuma_password="admin",  # Will be ignored if auth disabled
-        cluster_name="minikube-test",
-        kubeconfig=os.path.expanduser("~/.kube/config.minikube")
-    )
 
 
 def create_uptimemonitor(k8s_client, name, spec, namespace="default"):
     """Helper to create UptimeMonitor CR."""
     cr = {
-        "apiVersion": "uptime-operator.psycholog1st.dev/v1alpha1",
+        "apiVersion": "uptime-operator.dev/v1alpha1",
         "kind": "UptimeMonitor",
         "metadata": {
             "name": name,
@@ -43,7 +27,7 @@ def create_uptimemonitor(k8s_client, name, spec, namespace="default"):
     }
     
     return k8s_client.create_namespaced_custom_object(
-        group="uptime-operator.psycholog1st.dev",
+        group="uptime-operator.dev",
         version="v1alpha1",
         namespace=namespace,
         plural="uptimemonitors",
@@ -55,7 +39,7 @@ def get_uptimemonitor(k8s_client, name, namespace="default"):
     """Helper to get UptimeMonitor CR."""
     try:
         return k8s_client.get_namespaced_custom_object(
-            group="uptime-operator.psycholog1st.dev",
+            group="uptime-operator.dev",
             version="v1alpha1",
             namespace=namespace,
             plural="uptimemonitors",
@@ -71,7 +55,7 @@ def delete_uptimemonitor(k8s_client, name, namespace="default"):
     """Helper to delete UptimeMonitor CR."""
     try:
         k8s_client.delete_namespaced_custom_object(
-            group="uptime-operator.psycholog1st.dev",
+            group="uptime-operator.dev",
             version="v1alpha1",
             namespace=namespace,
             plural="uptimemonitors",
@@ -98,9 +82,9 @@ class TestRealIntegration:
         api_client = client.ApiextensionsV1Api()
         try:
             crd = api_client.read_custom_resource_definition(
-                "uptimemonitors.uptime-operator.psycholog1st.dev"
+                "uptimemonitors.uptime-operator.dev"
             )
-            assert crd.metadata.name == "uptimemonitors.uptime-operator.psycholog1st.dev"
+            assert crd.metadata.name == "uptimemonitors.uptime-operator.dev"
             print("✅ UptimeMonitor CRD exists and is accessible")
         except ApiException as e:
             pytest.fail(f"CRD not found: {e}")
@@ -232,7 +216,7 @@ class TestRealIntegration:
         
         # Update by replacing the CR
         updated_cr = {
-            "apiVersion": "uptime-operator.psycholog1st.dev/v1alpha1",
+            "apiVersion": "uptime-operator.dev/v1alpha1",
             "kind": "UptimeMonitor",
             "metadata": {
                 "name": test_name,
@@ -243,7 +227,7 @@ class TestRealIntegration:
         }
         
         updated_result = k8s_client.replace_namespaced_custom_object(
-            group="uptime-operator.psycholog1st.dev",
+            group="uptime-operator.dev",
             version="v1alpha1",
             namespace="default",
             plural="uptimemonitors",

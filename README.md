@@ -67,18 +67,20 @@ UptimeMonitor CR → Kopf Handler → Reconciler → Uptime Kuma API
 ## UptimeMonitor Specification
 
 ```yaml
-apiVersion: uptime-operator.psycholog1st.dev/v1alpha1
+apiVersion: uptime-operator.dev/v1alpha1
 kind: UptimeMonitor
 metadata:
   name: my-monitors
   namespace: default
 spec:
-  enabled: true                    # Master enable/disable switch
-  tags: "prod,backend"             # Default tags for all monitors
+  enabled: true                      # Master enable/disable switch
+  tags: "prod,backend"               # Default tags for all monitors
+  monitorGroup: "production-services" # Monitor group for organization (optional)
   endpoints:
-    - name: "api-health"           # Unique endpoint name
-      url: "https://api.com/health" # URL to monitor
-      tags_overwrite: "critical"   # Override default tags (optional)
+    - name: "api-health"             # Unique endpoint name
+      url: "https://api.com/health"  # URL to monitor
+      tagsOverride: "critical"       # Override default tags (optional)
+      monitorGroupOverride: "critical-apis" # Override monitor group (optional)
 ```
 
 ## Environment Configuration

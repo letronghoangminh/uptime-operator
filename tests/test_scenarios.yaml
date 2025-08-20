@@ -3,7 +3,7 @@
 
 # Scenario 1: Basic monitor creation
 ---
-apiVersion: uptime-operator.psycholog1st.dev/v1alpha1
+apiVersion: uptime-operator.dev/v1alpha1
 kind: UptimeMonitor
 metadata:
   name: basic-monitor
@@ -19,7 +19,7 @@ spec:
 
 ---
 # Scenario 2: Monitor with tag overrides
-apiVersion: uptime-operator.psycholog1st.dev/v1alpha1
+apiVersion: uptime-operator.dev/v1alpha1
 kind: UptimeMonitor
 metadata:
   name: tags-override-monitor
@@ -32,11 +32,11 @@ spec:
       url: "https://httpbin.org/get"
     - name: "critical-endpoint"
       url: "https://httpbin.org/status/200"
-      tags_overwrite: "critical,priority"
+      tagsOverride: "critical,priority"
 
 ---
 # Scenario 3: Disabled monitor
-apiVersion: uptime-operator.psycholog1st.dev/v1alpha1
+apiVersion: uptime-operator.dev/v1alpha1
 kind: UptimeMonitor
 metadata:
   name: disabled-monitor
@@ -50,7 +50,7 @@ spec:
 
 ---
 # Scenario 4: Multiple endpoints with different configurations
-apiVersion: uptime-operator.psycholog1st.dev/v1alpha1
+apiVersion: uptime-operator.dev/v1alpha1
 kind: UptimeMonitor
 metadata:
   name: multi-endpoint-monitor
@@ -63,16 +63,16 @@ spec:
       url: "https://jsonplaceholder.typicode.com/posts/1"
     - name: "httpbin-headers"
       url: "https://httpbin.org/headers"
-      tags_overwrite: "headers,debug"
+      tagsOverride: "headers,debug"
     - name: "httpbin-ip"
       url: "https://httpbin.org/ip"
     - name: "httpbin-user-agent"
       url: "https://httpbin.org/user-agent"
-      tags_overwrite: "user-agent,info"
+      tagsOverride: "user-agent,info"
 
 ---
 # Scenario 5: Production-like monitor
-apiVersion: uptime-operator.psycholog1st.dev/v1alpha1
+apiVersion: uptime-operator.dev/v1alpha1
 kind: UptimeMonitor
 metadata:
   name: prod-app-monitor
@@ -85,7 +85,7 @@ spec:
       url: "https://httpbin.org/get"
     - name: "api-status"
       url: "https://httpbin.org/status/200"
-      tags_overwrite: "prod,api,critical"
+      tagsOverride: "prod,api,critical"
     - name: "external-service"
       url: "https://jsonplaceholder.typicode.com/users"
-      tags_overwrite: "external,dependency"
+      tagsOverride: "external,dependency"

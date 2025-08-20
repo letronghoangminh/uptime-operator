@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
-Test runner script for comprehensive testing scenarios.
+Real integration test runner for Uptime Operator.
+Uses environment variables for configuration:
+- KUBECONFIG: Path to kubernetes config file
+- UPTIME_KUMA_URL: Uptime Kuma instance URL (default: http://localhost:3001)
 """
 import subprocess
 import sys
 import time
 import os
-from pathlib import Path
 
 
 def run_command(cmd, check=True):
@@ -22,15 +24,20 @@ def run_command(cmd, check=True):
 
 
 def main():
-    """Run all test scenarios."""
-    print("🧪 Running Uptime Operator Test Suite")
+    """Run real integration tests."""
+    print("🧪 Running Uptime Operator Real Integration Tests")
     
-    # Set kubeconfig to minikube
-    os.environ['KUBECONFIG'] = os.path.expanduser('~/.kube/config.minikube')
+    # Check environment variables
+    kubeconfig = os.environ.get('KUBECONFIG')
+    uptime_kuma_url = os.environ.get('UPTIME_KUMA_URL', 'http://localhost:3001')
+    
+    print(f"📋 Configuration:")
+    print(f"   KUBECONFIG: {kubeconfig or 'default'}")
+    print(f"   UPTIME_KUMA_URL: {uptime_kuma_url}")
     
     # Check if CRD is installed
     print("\n📋 Checking CRD installation...")
-    result = run_command("kubectl get crd uptimemonitors.uptime-operator.psycholog1st.dev", check=False)
+    result = run_command("kubectl get crd uptimemonitors.uptime-operator.dev", check=False)
     if result.returncode != 0:
         print("Installing CRD...")
         run_command("kubectl apply -f manifests/crd.yaml")
@@ -38,44 +45,21 @@ def main():
     else:
         print("✅ CRD already installed")
     
-    # Run unit tests
-    print("\n🔧 Running unit tests...")
-    run_command("pytest tests/test_models.py -v")
-    
-    # Check if Uptime Kuma is running
+    # Check if Uptime Kuma is accessible
     print("\n🏃 Checking Uptime Kuma availability...")
-    result = run_command("curl -f http://localhost:3001 > /dev/null 2>&1", check=False)
+    result = run_command(f"curl -f {uptime_kuma_url} > /dev/null 2>&1", check=False)
     if result.returncode != 0:
-        print("⚠️  Uptime Kuma not accessible at localhost:3001")
-        print("Please ensure Uptime Kuma is running: docker-compose up -d")
-        print("And complete the setup at http://localhost:3001")
+        print(f"⚠️  Uptime Kuma not accessible at {uptime_kuma_url}")
+        print("Please ensure Uptime Kuma is running and accessible")
+        print("For local testing: docker-compose up -d")
     else:
         print("✅ Uptime Kuma is accessible")
     
-    # Apply test scenarios
-    print("\n📝 Applying test scenarios...")
-    run_command("kubectl apply -f tests/test_scenarios.yaml")
+    # Run real integration tests
+    print("\n🔗 Running real integration tests...")
+    run_command("pytest tests/test_real_integration.py -v")
     
-    # Wait a bit for resources to be created
-    print("⏳ Waiting for resources...")
-    time.sleep(5)
-    
-    # Show created resources
-    print("\n📊 Checking created UptimeMonitors...")
-    run_command("kubectl get uptimemonitors -A")
-    
-    # Run integration tests (if Uptime Kuma is available)
-    if result.returncode == 0:
-        print("\n🔗 Running integration tests...")
-        run_command("pytest tests/test_integration.py -v")
-    
-    print("\n🧹 Cleaning up test resources...")
-    run_command("kubectl delete -f tests/test_scenarios.yaml --ignore-not-found=true")
-    
-    print("\n✅ Test suite completed!")
-    print("\nTo run individual tests:")
-    print("  pytest tests/test_models.py -v")
-    print("  pytest tests/test_integration.py -v")
+    print("\n✅ Integration tests completed!")
     print("\nTo run the operator:")
     print("  python main.py")
     print("  # or")

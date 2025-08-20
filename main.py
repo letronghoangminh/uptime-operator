@@ -1,7 +1,6 @@
 """
 Main entry point for the Uptime Operator.
 """
-import os
 import kopf
 from loguru import logger
 from dotenv import load_dotenv

@@ -3,7 +3,6 @@ import kopf
 from loguru import logger
 
 from .reconciler import UptimeMonitorReconciler
-from ..utils import Config
 
 # Lazily initialize reconciler when needed
 _reconciler = None
@@ -16,7 +15,7 @@ def get_reconciler():
     return _reconciler
 
 
-@kopf.on.create('uptime-operator.psycholog1st.dev', 'v1alpha1', 'uptimemonitors')
+@kopf.on.create('uptime-operator.dev', 'v1alpha1', 'uptimemonitors')
 async def on_create(spec, status, meta, logger, **kwargs):
     """Handle UptimeMonitor creation."""
     namespace = meta['namespace']
@@ -34,7 +33,7 @@ async def on_create(spec, status, meta, logger, **kwargs):
     return new_status
 
 
-@kopf.on.update('uptime-operator.psycholog1st.dev', 'v1alpha1', 'uptimemonitors')
+@kopf.on.update('uptime-operator.dev', 'v1alpha1', 'uptimemonitors')
 async def on_update(spec, status, meta, logger, **kwargs):
     """Handle UptimeMonitor updates."""
     namespace = meta['namespace']
@@ -49,7 +48,7 @@ async def on_update(spec, status, meta, logger, **kwargs):
     return new_status
 
 
-@kopf.on.delete('uptime-operator.psycholog1st.dev', 'v1alpha1', 'uptimemonitors')
+@kopf.on.delete('uptime-operator.dev', 'v1alpha1', 'uptimemonitors')
 async def on_delete(spec, status, meta, logger, **kwargs):
     """Handle UptimeMonitor deletion."""
     namespace = meta['namespace']
@@ -68,7 +67,7 @@ async def on_delete(spec, status, meta, logger, **kwargs):
         # Don't raise exception, allow deletion to proceed
 
 
-@kopf.on.field('uptime-operator.psycholog1st.dev', 'v1alpha1', 'uptimemonitors', field='spec')
+@kopf.on.field('uptime-operator.dev', 'v1alpha1', 'uptimemonitors', field='spec')
 async def on_spec_change(old, new, status, meta, logger, **kwargs):
     """Handle changes to the spec field specifically."""
     namespace = meta['namespace']
@@ -77,7 +76,7 @@ async def on_spec_change(old, new, status, meta, logger, **kwargs):
     logger.info(f"Spec changed for UptimeMonitor {namespace}/{name}")
     
     # Reconcile monitors
-    new_status = await reconciler.reconcile(new, status, meta, logger)
+    new_status = await get_reconciler().reconcile(new, status, meta, logger)
     
     return new_status
 

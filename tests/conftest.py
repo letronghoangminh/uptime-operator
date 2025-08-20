@@ -1,64 +1,41 @@
-"""Pytest configuration and fixtures for the test suite."""
+"""Test fixtures for real integration tests."""
 import os
 import pytest
-from unittest.mock import Mock, patch
 from kubernetes import client, config
 
 from uptime_operator.utils.config import Config
-from uptime_operator.clients.uptime_kuma import UptimeKumaClient
 
 
 @pytest.fixture
-def test_config():
-    """Test configuration."""
+def k8s_client():
+    """Real Kubernetes client using KUBECONFIG env var."""
+    kubeconfig_path = os.environ.get('KUBECONFIG')
+    if kubeconfig_path:
+        config.load_kube_config(config_file=kubeconfig_path)
+    else:
+        config.load_kube_config()  # Use default config
+    return client.CustomObjectsApi()
+
+
+@pytest.fixture  
+def real_config():
+    """Real configuration for integration tests using env vars."""
     return Config(
-        uptime_kuma_url="http://localhost:3001",
-        uptime_kuma_username="admin",
-        uptime_kuma_password="admin",
-        cluster_name="test-cluster",
-        kubeconfig="~/.kube/config.minikube"
+        uptime_kuma_url=os.environ.get('UPTIME_KUMA_URL', 'http://localhost:3001'),
+        uptime_kuma_username=os.environ.get('UPTIME_KUMA_USERNAME', ''),
+        uptime_kuma_password=os.environ.get('UPTIME_KUMA_PASSWORD', ''),
+        cluster_name=os.environ.get('CLUSTER_NAME', 'test-cluster'),
+        kubeconfig=os.environ.get('KUBECONFIG')
     )
 
 
 @pytest.fixture
-def mock_uptime_client():
-    """Mock Uptime Kuma client."""
-    with patch('uptime_operator.clients.uptime_kuma.UptimeKumaApi') as mock_api:
-        mock_instance = Mock()
-        mock_api.return_value = mock_instance
-        
-        # Mock successful login
-        mock_instance.login.return_value = True
-        
-        # Mock get_monitors to return empty list by default
-        mock_instance.get_monitors.return_value = []
-        
-        # Mock successful monitor creation
-        mock_instance.add_monitor.return_value = {'monitorID': 123}
-        
-        # Mock successful monitor update
-        mock_instance.edit_monitor.return_value = True
-        
-        # Mock successful monitor deletion
-        mock_instance.delete_monitor.return_value = True
-        
-        client = UptimeKumaClient()
-        yield client, mock_instance
-
-
-@pytest.fixture
-def kubernetes_client():
-    """Real Kubernetes client using minikube config."""
-    config.load_kube_config(config_file="~/.kube/config.minikube")
-    return client.CustomObjectsApi()
-
-
-@pytest.fixture
 def sample_uptimemonitor_spec():
-    """Sample UptimeMonitor specification."""
+    """Sample UptimeMonitor spec for testing."""
     return {
         "enabled": True,
         "tags": "test,integration",
+        "monitorGroup": "test-group",
         "endpoints": [
             {
                 "name": "httpbin-get",
@@ -67,21 +44,7 @@ def sample_uptimemonitor_spec():
             {
                 "name": "httpbin-status",
                 "url": "https://httpbin.org/status/200",
-                "tags_overwrite": "test,status"
+                "tagsOverride": "test,status"
             }
         ]
-    }
-
-
-@pytest.fixture
-def sample_uptimemonitor_cr(sample_uptimemonitor_spec):
-    """Complete UptimeMonitor CR."""
-    return {
-        "apiVersion": "uptime-operator.psycholog1st.dev/v1alpha1",
-        "kind": "UptimeMonitor", 
-        "metadata": {
-            "name": "test-monitor",
-            "namespace": "default"
-        },
-        "spec": sample_uptimemonitor_spec
     }

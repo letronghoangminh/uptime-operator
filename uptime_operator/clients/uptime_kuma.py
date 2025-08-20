@@ -1,8 +1,6 @@
 """
 Uptime Kuma client wrapper for the operator.
 """
-import os
-import time
 from typing import Dict, List, Optional, Any
 from loguru import logger
 from uptime_kuma_api import UptimeKumaApi, MonitorType
@@ -84,7 +82,58 @@ class UptimeKumaClient:
             logger.error(f"Failed to get monitors for CRD UID {crd_uid}: {e}")
             return []
     
-    def create_monitor(self, name: str, url: str, tags: List[str], crd_uid: str) -> Optional[int]:
+    def get_or_create_monitor_group(self, group_name: str) -> Optional[int]:
+        """Get existing monitor group or create a new one."""
+        try:
+            if not self.api:
+                self._connect()
+            
+            # First, try to find existing group
+            existing_group = self.get_monitor_group_by_name(group_name)
+            if existing_group:
+                logger.debug(f"Found existing monitor group '{group_name}' with ID {existing_group['id']}")
+                return existing_group['id']
+            
+            # Create new monitor group
+            logger.info(f"Creating new monitor group: '{group_name}'")
+            group_data = {
+                "type": MonitorType.GROUP,
+                "name": group_name
+            }
+            
+            result = self.api.add_monitor(**group_data)
+            group_id = result.get('monitorID')
+            
+            if group_id:
+                logger.info(f"Created monitor group '{group_name}' with ID {group_id}")
+                return int(group_id)
+            else:
+                logger.error(f"Failed to create monitor group '{group_name}': No group ID returned")
+                return None
+                
+        except Exception as e:
+            logger.error(f"Failed to get or create monitor group '{group_name}': {e}")
+            return None
+    
+    def get_monitor_group_by_name(self, group_name: str) -> Optional[Dict[str, Any]]:
+        """Get a monitor group by name."""
+        try:
+            if not self.api:
+                self._connect()
+            
+            all_monitors = self.api.get_monitors()
+            
+            for monitor in all_monitors:
+                if monitor.get('type') == MonitorType.GROUP and monitor.get('name') == group_name:
+                    return monitor
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Failed to get monitor group '{group_name}': {e}")
+            return None
+
+    def create_monitor(self, name: str, url: str, tags: List[str], crd_uid: str, parent_id: Optional[int] = None) -> Optional[int]:
         """Create a new monitor in Uptime Kuma."""
         try:
             if not self.api:
@@ -100,6 +149,10 @@ class UptimeKumaClient:
                 "url": url,
                 "interval": self.config.monitor_interval
             }
+            
+            # Add parent ID if specified
+            if parent_id:
+                monitor_data["parent"] = parent_id
             
             result = self.api.add_monitor(**monitor_data)
             monitor_id = result.get('monitorID')
@@ -123,7 +176,7 @@ class UptimeKumaClient:
             logger.error(f"Failed to create monitor '{name}': {e}")
             return None
     
-    def update_monitor(self, monitor_id: int, name: str, url: str, tags: List[str], crd_uid: str) -> bool:
+    def update_monitor(self, monitor_id: int, name: str, url: str, tags: List[str], crd_uid: str, parent_id: Optional[int] = None) -> bool:
         """Update an existing monitor in Uptime Kuma."""
         try:
             if not self.api:
@@ -140,6 +193,10 @@ class UptimeKumaClient:
                 "url": url,
                 "interval": self.config.monitor_interval
             }
+            
+            # Add parent ID if specified
+            if parent_id:
+                monitor_data["parent"] = parent_id
             
             result = self.api.edit_monitor(monitor_id, **monitor_data)
             

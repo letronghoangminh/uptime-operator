@@ -1,4 +1,4 @@
-apiVersion: uptime-operator.psycholog1st.dev/v1alpha1
+apiVersion: uptime-operator.dev/v1alpha1
 kind: UptimeMonitor
 metadata:
   name: my-app-monitors
@@ -6,12 +6,13 @@ metadata:
 spec:
   enabled: true
   tags: "prod,golang,backend"
+  monitorGroup: "production-api"
   endpoints:
     - name: "main-health"
       url: "https://my-app.io/healthz"
     - name: "api-status"
       url: "https://my-app.io/api/status"
-      tags_overwrite: "prod,golang,critical-api"
+      tagsOverride: "prod,golang,critical-api"
     - name: "external-dependency"
       url: "https://third-party-api.com/status"
-      tags_overwrite: "external,prod"
+      tagsOverride: "external,prod"

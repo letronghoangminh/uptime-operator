@@ -1,4 +1,4 @@
-apiVersion: uptime-operator.psycholog1st.dev/v1alpha1
+apiVersion: uptime-operator.dev/v1alpha1
 kind: UptimeMonitor
 metadata:
   name: simple-monitor
