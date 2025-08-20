@@ -1,0 +1,13 @@
+apiVersion: uptime-operator.psycholog1st.dev/v1alpha1
+kind: UptimeMonitor
+metadata:
+  name: simple-monitor
+  namespace: default
+spec:
+  enabled: true
+  tags: "example,simple"
+  endpoints:
+    - name: "google-health"
+      url: "https://www.google.com"
+    - name: "github-api"
+      url: "https://api.github.com/status"

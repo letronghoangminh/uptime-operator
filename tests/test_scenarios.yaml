@@ -1,0 +1,91 @@
+# Test scenarios for UptimeMonitor CRUD operations
+# These can be applied with kubectl for manual testing
+
+# Scenario 1: Basic monitor creation
+---
+apiVersion: uptime-operator.psycholog1st.dev/v1alpha1
+kind: UptimeMonitor
+metadata:
+  name: basic-monitor
+  namespace: default
+spec:
+  enabled: true
+  tags: "test,basic"
+  endpoints:
+    - name: "httpbin-get"
+      url: "https://httpbin.org/get"
+    - name: "httpbin-status"
+      url: "https://httpbin.org/status/200"
+
+---
+# Scenario 2: Monitor with tag overrides
+apiVersion: uptime-operator.psycholog1st.dev/v1alpha1
+kind: UptimeMonitor
+metadata:
+  name: tags-override-monitor
+  namespace: default
+spec:
+  enabled: true
+  tags: "default,tag"
+  endpoints:
+    - name: "normal-endpoint"
+      url: "https://httpbin.org/get"
+    - name: "critical-endpoint"
+      url: "https://httpbin.org/status/200"
+      tags_overwrite: "critical,priority"
+
+---
+# Scenario 3: Disabled monitor
+apiVersion: uptime-operator.psycholog1st.dev/v1alpha1
+kind: UptimeMonitor
+metadata:
+  name: disabled-monitor
+  namespace: default
+spec:
+  enabled: false
+  tags: "disabled,test"
+  endpoints:
+    - name: "should-not-create"
+      url: "https://httpbin.org/get"
+
+---
+# Scenario 4: Multiple endpoints with different configurations
+apiVersion: uptime-operator.psycholog1st.dev/v1alpha1
+kind: UptimeMonitor
+metadata:
+  name: multi-endpoint-monitor
+  namespace: default
+spec:
+  enabled: true
+  tags: "multi,endpoints"
+  endpoints:
+    - name: "json-api"
+      url: "https://jsonplaceholder.typicode.com/posts/1"
+    - name: "httpbin-headers"
+      url: "https://httpbin.org/headers"
+      tags_overwrite: "headers,debug"
+    - name: "httpbin-ip"
+      url: "https://httpbin.org/ip"
+    - name: "httpbin-user-agent"
+      url: "https://httpbin.org/user-agent"
+      tags_overwrite: "user-agent,info"
+
+---
+# Scenario 5: Production-like monitor
+apiVersion: uptime-operator.psycholog1st.dev/v1alpha1
+kind: UptimeMonitor
+metadata:
+  name: prod-app-monitor
+  namespace: production
+spec:
+  enabled: true
+  tags: "prod,app,backend"
+  endpoints:
+    - name: "health-check"
+      url: "https://httpbin.org/get"
+    - name: "api-status"
+      url: "https://httpbin.org/status/200"
+      tags_overwrite: "prod,api,critical"
+    - name: "external-service"
+      url: "https://jsonplaceholder.typicode.com/users"
+      tags_overwrite: "external,dependency"

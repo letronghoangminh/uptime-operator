@@ -1,0 +1,46 @@
+[project]
+name = "uptime-operator"
+version = "0.1.0"
+description = "Kubernetes Operator for managing Uptime Kuma monitors using Kopf framework"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "kopf>=1.37.0",
+    "kubernetes>=28.1.0",
+    "uptime-kuma-api>=1.2.1",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "python-dotenv>=1.0.0",
+    "loguru>=0.7.0",
+    "asyncio-mqtt>=0.16.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-mock>=3.12.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+asyncio_mode = "auto"
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
