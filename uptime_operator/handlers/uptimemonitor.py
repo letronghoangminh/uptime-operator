@@ -23,10 +23,8 @@ async def on_create(spec, status, meta, logger, **kwargs):
     
     logger.info(f"Creating UptimeMonitor {namespace}/{name}")
     
-    # Add finalizer
     kopf.append_owner_reference(kwargs['body'])
     
-    # Reconcile monitors
     new_status = await get_reconciler().reconcile(spec, status, meta, logger)
     
     logger.info(f"UptimeMonitor {namespace}/{name} created successfully")
@@ -41,7 +39,6 @@ async def on_update(spec, status, meta, logger, **kwargs):
     
     logger.info(f"Updating UptimeMonitor {namespace}/{name}")
     
-    # Reconcile monitors
     new_status = await get_reconciler().reconcile(spec, status, meta, logger)
     
     logger.info(f"UptimeMonitor {namespace}/{name} updated successfully")
@@ -58,13 +55,11 @@ async def on_delete(spec, status, meta, logger, **kwargs):
     logger.info(f"Deleting UptimeMonitor {namespace}/{name}")
     
     try:
-        # Clean up all monitors for this CRD
         await get_reconciler()._cleanup_monitors(crd_uid)
         logger.info(f"UptimeMonitor {namespace}/{name} cleanup completed")
         
     except Exception as e:
         logger.error(f"Error during cleanup of {namespace}/{name}: {e}")
-        # Don't raise exception, allow deletion to proceed
 
 
 @kopf.on.field('uptime-operator.dev', 'v1alpha1', 'uptimemonitors', field='spec')
@@ -75,7 +70,6 @@ async def on_spec_change(old, new, status, meta, logger, **kwargs):
     
     logger.info(f"Spec changed for UptimeMonitor {namespace}/{name}")
     
-    # Reconcile monitors
     new_status = await get_reconciler().reconcile(new, status, meta, logger)
     
     return new_status

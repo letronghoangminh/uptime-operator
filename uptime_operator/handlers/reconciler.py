@@ -3,7 +3,6 @@ from datetime import datetime, timezone
 from typing import Dict, Any
 
 import kopf
-from loguru import logger
 
 from ..clients import UptimeKumaClient
 from ..models import UptimeMonitorSpec, UptimeMonitorStatus, MonitorStatus, Condition
@@ -26,14 +25,12 @@ class UptimeMonitorReconciler:
         cr_name = meta['name']
         crd_uid = meta['uid']
         
-        # Parse spec using Pydantic model
         try:
             spec_model = UptimeMonitorSpec(**spec)
         except Exception as e:
             logger.error(f"Invalid spec for {namespace}/{cr_name}: {e}")
             return self._create_error_status(f"Invalid spec: {str(e)}")
         
-        # Initialize new status
         new_status = UptimeMonitorStatus(
             conditions=status.get('conditions', []),
             monitors=[],
@@ -41,12 +38,10 @@ class UptimeMonitorReconciler:
         )
         
         try:
-            # Health check Uptime Kuma connection
             if not self.uptime_client.health_check():
                 logger.error("Uptime Kuma connection failed")
-                return self._create_error_status("Uptime Kuma connection failed").dict()
+                return self._create_error_status("Uptime Kuma connection failed").model_dump()
             
-            # If disabled, remove all monitors
             if not spec_model.enabled:
                 logger.info(f"UptimeMonitor {namespace}/{cr_name} is disabled, removing all monitors")
                 await self._cleanup_monitors(crd_uid)
@@ -59,23 +54,19 @@ class UptimeMonitorReconciler:
                     message="UptimeMonitor is disabled"
                 )]
                 
-                return new_status.dict()
+                return new_status.model_dump()
             
-            # Get current state from Uptime Kuma
             existing_monitors = self.uptime_client.get_monitors_by_crd_uid(crd_uid)
             existing_by_name = {monitor.get('name'): monitor for monitor in existing_monitors}
             
             processed_names = set()
             
-            # Process each desired endpoint
             for endpoint in spec_model.endpoints:
                 monitor_name = build_monitor_name(namespace, cr_name, endpoint.name)
                 processed_names.add(monitor_name)
                 
-                # Get tags for this endpoint
                 endpoint_tags = spec_model.get_endpoint_tags(endpoint)
                 
-                # Get monitor group for this endpoint (if specified)
                 monitor_group = spec_model.get_endpoint_monitor_group(endpoint)
                 parent_id = None
                 
@@ -88,12 +79,10 @@ class UptimeMonitorReconciler:
                 existing_monitor = existing_by_name.get(monitor_name)
                 
                 if existing_monitor:
-                    # Update existing monitor if needed
                     monitor_id = int(existing_monitor['id'])
                     current_url = existing_monitor.get('url', '')
                     current_tags = existing_monitor.get('tags', [])
                     
-                    # Check if update is needed
                     expected_tags = [self.uptime_client.cluster_name, f"crd_uid:{crd_uid}"] + endpoint_tags
                     
                     needs_update = (
@@ -109,7 +98,6 @@ class UptimeMonitorReconciler:
                         
                         status_value = "Updated" if success else "UpdateFailed"
                     else:
-                        # Monitor is up to date
                         status_value = "Ready"
                     
                     new_status.monitors.append(MonitorStatus(
@@ -121,7 +109,6 @@ class UptimeMonitorReconciler:
                     ))
                     
                 else:
-                    # Create new monitor
                     logger.info(f"Creating monitor '{monitor_name}'" + (f" in group '{monitor_group}'" if monitor_group else ""))
                     monitor_id = self.uptime_client.create_monitor(
                         monitor_name, endpoint.url, endpoint_tags, crd_uid, parent_id
